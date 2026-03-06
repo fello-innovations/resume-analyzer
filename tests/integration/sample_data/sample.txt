@@ -1,0 +1,9 @@
+Jane Smith
+jane.smith@techcorp.com
++1-415-555-0101
+linkedin.com/in/janesmith
+
+SOFTWARE ENGINEER
+10 years experience in Python and distributed systems.
+Previously at Scale AI, Stripe, and Uber.
+Skills: Python, Go, Kubernetes, Terraform, PostgreSQL
