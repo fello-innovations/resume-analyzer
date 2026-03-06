@@ -26,7 +26,7 @@ from agents.agent2 import create_agent2
 from agents.agent3 import create_agent3
 from agents.contact_extractor import ContactExtractor
 from models.schemas import ResumeResult, ContactInfo, Scores
-from output.csv_writer import write_results_to_csv
+from output.csv_writer import LiveCsvWriter, write_results_to_csv
 
 logging.basicConfig(
     level=logging.INFO,
@@ -198,8 +198,9 @@ def main():
 
     results = []
     errors = 0
+    live_csv = LiveCsvWriter(args.output)
 
-    log.info(f"\nProcessing {len(resume_files)} resumes...")
+    log.info(f"\nProcessing {len(resume_files)} resumes (streaming results to {args.output})...")
     with ThreadPoolExecutor(max_workers=args.workers) as outer:
         futures = {
             outer.submit(
@@ -211,6 +212,7 @@ def main():
         for i, future in enumerate(as_completed(futures), 1):
             rf = futures[future]
             result = future.result()
+            live_csv.append(result)
             results.append(result)
             if result.error:
                 errors += 1
@@ -223,6 +225,7 @@ def main():
                     f"Q5={result.scores.score_q5:2} TOTAL={result.scores.total:3}"
                 )
 
+    # Re-write sorted by score at the end
     write_results_to_csv(results, args.output)
 
     # ── Summary ──────────────────────────────────────────────────────────────

@@ -18,7 +18,7 @@ from agents.agent2 import create_agent2
 from agents.agent3 import create_agent3
 from agents.contact_extractor import ContactExtractor
 from models.schemas import ResumeResult, ContactInfo, Scores
-from output.csv_writer import write_results_to_csv
+from output.csv_writer import LiveCsvWriter, write_results_to_csv
 
 
 QUESTIONS = [
@@ -131,7 +131,9 @@ def main():
     image_parser = ImageParser()
 
     results = []
+    live_csv = LiveCsvWriter(OUTPUT_CSV)
     print(f"Processing {len(resume_files)} resumes (max {MAX_WORKERS_OUTER} parallel)...\n")
+    print(f"Results streaming to: {OUTPUT_CSV}\n")
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS_OUTER) as outer_pool:
         futures = {
@@ -144,13 +146,14 @@ def main():
         for i, future in enumerate(as_completed(futures), 1):
             rf = futures[future]
             result = future.result()
+            live_csv.append(result)
+            results.append(result)
             status = f"ERROR: {result.error}" if result.error else f"score={result.scores.total}"
             print(f"[{i}/{len(resume_files)}] {rf.name} — {status}")
-            results.append(result)
 
+    # Re-write sorted by score at the end
     write_results_to_csv(results, OUTPUT_CSV)
-    print(f"\nDone! Results written to {OUTPUT_CSV}")
-    print(f"Top candidate: {results[0].contact.name or 'Unknown'} (sorted in CSV)")
+    print(f"\nDone! Results sorted and written to {OUTPUT_CSV}")
 
 
 if __name__ == "__main__":
